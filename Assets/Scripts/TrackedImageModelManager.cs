@@ -5,38 +5,53 @@ public class TrackedImageModelManager : MonoBehaviour
 {
     private GameObject trackedImageModel;
     private Animator modelAnimator;
-    private Camera mainCamera;
 
-    void Start()
-    {
-        mainCamera = Camera.main;
-    }
-
+    private string IS_WALKING_FLAG_NAME = "IsWalking";
+    
+    private float DEBOUNCE_DURATION = 0.2f; // Time in seconds between toggles
+    
+    private float lastIsWalkingToggleTime = 0f;
+    
     void Update()
     {
         trackedImageModel = GameObject.FindGameObjectWithTag("TrackedImageModel");
         if (trackedImageModel != null)
         {
-            modelAnimator = trackedImageModel.GetComponent<Animator>();
+            modelAnimator = ComponentFinder.FindComponentInChildrenRecursive<Animator>(trackedImageModel);
         }
         
         if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed)
         {
-            var touchPosition = Touchscreen.current.primaryTouch.position.ReadValue();
-            HandleTouch(touchPosition);
+            HandleTouchWithDebounce();
         }
     }
 
-    private void HandleTouch(Vector2 touchPosition)
+    private void HandleTouchWithDebounce()
     {
-        Ray ray = mainCamera.ScreenPointToRay(touchPosition);
+        if (Time.time - lastIsWalkingToggleTime >= DEBOUNCE_DURATION)
+        {
+            var isToggled = HandleTouch();
+            if (isToggled)
+            {
+                 lastIsWalkingToggleTime = Time.time;
+            }
+        }
+    }
+    
+    private bool HandleTouch()
+    {
+        var touchPosition = Touchscreen.current.primaryTouch.position.ReadValue();
+        var ray = Camera.main.ScreenPointToRay(touchPosition);
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
             if (hit.collider.gameObject == trackedImageModel && modelAnimator != null)
             {
-                modelAnimator.SetTrigger("Walk");
+                var isWalking = modelAnimator.GetBool(IS_WALKING_FLAG_NAME);
+                modelAnimator.SetBool(IS_WALKING_FLAG_NAME, !isWalking);
+                return true;
             }
         }
+        return false;
     }
 
     private float ANGLE_STEP = 45f;
@@ -45,8 +60,8 @@ public class TrackedImageModelManager : MonoBehaviour
     {
         if (trackedImageModel != null)
         {
-            // trackedImageModel.transform.GetChild(0).Rotate(Vector3.up, -ANGLE_STEP);
-            Quaternion rotation = Quaternion.Euler(0, -ANGLE_STEP, 0); 
+            // trackedImageModel.transform.GetChild(0).Rotate(Vector3.up, ANGLE_STEP);
+            Quaternion rotation = Quaternion.Euler(0, ANGLE_STEP, 0); 
             trackedImageModel.transform.GetChild(0).rotation = trackedImageModel.transform.GetChild(0).rotation * rotation;
         }
     }
@@ -55,8 +70,8 @@ public class TrackedImageModelManager : MonoBehaviour
     {
         if (trackedImageModel != null)
         {
-            // trackedImageModel.transform.GetChild(0).Rotate(Vector3.up, ANGLE_STEP);
-            Quaternion rotation = Quaternion.Euler(0, ANGLE_STEP, 0);
+            // trackedImageModel.transform.GetChild(0).Rotate(Vector3.up, -ANGLE_STEP);
+            Quaternion rotation = Quaternion.Euler(0, -ANGLE_STEP, 0);
             trackedImageModel.transform.GetChild(0).rotation = trackedImageModel.transform.GetChild(0).rotation * rotation;
         }
     }
@@ -65,7 +80,8 @@ public class TrackedImageModelManager : MonoBehaviour
     {
         if (trackedImageModel != null)
         {
-            trackedImageModel.transform.GetChild(0).localScale *= 1.1f;
+            // trackedImageModel.transform.GetChild(0).localScale *= 1.1f;
+            trackedImageModel.transform.localScale *= 1.1f; // for collider
         }
     }
 
@@ -73,7 +89,8 @@ public class TrackedImageModelManager : MonoBehaviour
     {
         if (trackedImageModel != null)
         {
-            trackedImageModel.transform.GetChild(0).localScale *= 0.9f;
+            // trackedImageModel.transform.GetChild(0).localScale *= 0.9f;
+            trackedImageModel.transform.localScale *= 0.9f; // for collider
         }
     }
 }
