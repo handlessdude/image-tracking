@@ -809,7 +809,7 @@ GameObject:
   - component: {fileID: 1769154823179702955}
   m_Layer: 0
   m_Name: JohnLemon
-  m_TagString: Untagged
+  m_TagString: TrackedImageModel
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
