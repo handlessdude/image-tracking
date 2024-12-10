@@ -6,6 +6,7 @@ TagManager:
   tags:
   - TrackedImageModel
   - DebugConsole
+  - StateLabel
   layers:
   - Default
   - TransparentFX

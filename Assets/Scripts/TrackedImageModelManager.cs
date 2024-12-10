@@ -51,7 +51,11 @@ public class TrackedImageModelManager : MonoBehaviour
     private float DEBOUNCE_DURATION = 0.2f; // Time in seconds between toggles
     
     private float lastIsWalkingToggleTime = 0f;
-    
+
+    void Start()
+    { 
+        animationState = AnimationState.Unknown;
+    }
     void Update()
     {
         trackedImageModel = GameObject.FindGameObjectWithTag("TrackedImageModel");
@@ -60,6 +64,8 @@ public class TrackedImageModelManager : MonoBehaviour
             modelAnimator = ComponentFinder.FindComponentInChildrenRecursive<Animator>(trackedImageModel);
 
             UpdateIsModelVisible();
+            
+            UpdateAnimationState();
         }
         
         if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed)
@@ -106,6 +112,18 @@ public class TrackedImageModelManager : MonoBehaviour
             Bounds modelBounds = ComponentFinder.FindComponentInChildrenRecursive<Renderer>(trackedImageModel).bounds;
             isModelVisible = GeometryUtility.TestPlanesAABB(frustumPlanes, modelBounds);
         }
+    }
+
+    private void UpdateAnimationState()
+    {
+        if (!isModelVisible)
+        {
+            animationState = AnimationState.Unknown;
+            return;
+        }
+        var isWalking = modelAnimator.GetBool(IS_WALKING_FLAG_NAME);
+        animationState = isWalking ? AnimationState.Walk : AnimationState.Idle;
+        return;
     }
     
     private float ANGLE_STEP = 45f;
