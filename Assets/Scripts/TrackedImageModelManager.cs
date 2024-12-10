@@ -1,6 +1,13 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+public enum AnimationState
+{
+    Idle,
+    Walk ,
+    Unknown
+}
+
 public class TrackedImageModelManager : MonoBehaviour
 {
     private GameObject trackedImageModel;
@@ -12,12 +19,18 @@ public class TrackedImageModelManager : MonoBehaviour
     
     private float lastIsWalkingToggleTime = 0f;
     
+    public bool isModelVisible { get; private set; } = false;
+    
+    public AnimationState animationState { get; private set; } = AnimationState.Unknown;
+    
     void Update()
     {
         trackedImageModel = GameObject.FindGameObjectWithTag("TrackedImageModel");
         if (trackedImageModel != null)
         {
             modelAnimator = ComponentFinder.FindComponentInChildrenRecursive<Animator>(trackedImageModel);
+
+            UpdateIsModelVisible();
         }
         
         if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed)
@@ -47,13 +60,39 @@ public class TrackedImageModelManager : MonoBehaviour
             if (hit.collider.gameObject == trackedImageModel && modelAnimator != null)
             {
                 var isWalking = modelAnimator.GetBool(IS_WALKING_FLAG_NAME);
-                modelAnimator.SetBool(IS_WALKING_FLAG_NAME, !isWalking);
+                var isWalkingNew = !isWalking;
+                animationState = isWalkingNew ? AnimationState.Walk : AnimationState.Idle;
+                
+                // todo: вырезать
+                var str = animationState == AnimationState.Walk ? "Walk" : "Idle";
+                MyLogger.Log($"Animation state: {str}");
+                
+                modelAnimator.SetBool(IS_WALKING_FLAG_NAME, isWalkingNew);
                 return true;
             }
         }
         return false;
     }
 
+    private void UpdateIsModelVisible()
+    {
+        if (trackedImageModel != null && Camera.main != null)
+        {
+            var oldIsModelVisible = isModelVisible;
+            
+            Plane[] frustumPlanes = GeometryUtility.CalculateFrustumPlanes(Camera.main);
+            Bounds modelBounds = ComponentFinder.FindComponentInChildrenRecursive<Renderer>(trackedImageModel).bounds;
+
+            isModelVisible = GeometryUtility.TestPlanesAABB(frustumPlanes, modelBounds);
+
+            if (oldIsModelVisible != isModelVisible)
+            {
+                var isModelVisibleStr = isModelVisible ? "true" : "false";
+                MyLogger.Log($"isModelVisible: {isModelVisibleStr}");
+            }
+        }
+    }
+    
     private float ANGLE_STEP = 45f;
     
     public void RotateLeft()

@@ -1,9 +1,9 @@
 ﻿using UnityEngine;
 using TMPro;
 
-public class TextUtility : MonoBehaviour
+public class MyLogger : MonoBehaviour
 {
-    public static void DebugLog(string newLineText)
+    public static void Log(string newLineText)
     {
         GameObject textObject = GameObject.FindWithTag("DebugConsole");
         
