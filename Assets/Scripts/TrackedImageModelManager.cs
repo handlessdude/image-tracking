@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System;
 
 public enum AnimationState
 {
@@ -10,6 +11,38 @@ public enum AnimationState
 
 public class TrackedImageModelManager : MonoBehaviour
 {
+    public event Action<bool> OnModelVisibilityChanged;
+
+    private bool _isModelVisible = false;
+    public bool isModelVisible
+    {
+        get => _isModelVisible;
+        private set
+        {
+            if (_isModelVisible != value)
+            {
+                _isModelVisible = value;
+                OnModelVisibilityChanged?.Invoke(_isModelVisible);
+            }
+        }
+    }
+    
+    public event Action<AnimationState> OnAnimationStateChanged;
+
+    private AnimationState _animationState = AnimationState.Idle;
+    public AnimationState animationState
+    {
+        get => _animationState;
+        private set
+        {
+            if (_animationState != value)
+            {
+                _animationState = value;
+                OnAnimationStateChanged?.Invoke(_animationState);
+            }
+        }
+    }
+    
     private GameObject trackedImageModel;
     private Animator modelAnimator;
 
@@ -18,10 +51,6 @@ public class TrackedImageModelManager : MonoBehaviour
     private float DEBOUNCE_DURATION = 0.2f; // Time in seconds between toggles
     
     private float lastIsWalkingToggleTime = 0f;
-    
-    public bool isModelVisible { get; private set; } = false;
-    
-    public AnimationState animationState { get; private set; } = AnimationState.Unknown;
     
     void Update()
     {
@@ -62,11 +91,6 @@ public class TrackedImageModelManager : MonoBehaviour
                 var isWalking = modelAnimator.GetBool(IS_WALKING_FLAG_NAME);
                 var isWalkingNew = !isWalking;
                 animationState = isWalkingNew ? AnimationState.Walk : AnimationState.Idle;
-                
-                // todo: вырезать
-                var str = animationState == AnimationState.Walk ? "Walk" : "Idle";
-                MyLogger.Log($"Animation state: {str}");
-                
                 modelAnimator.SetBool(IS_WALKING_FLAG_NAME, isWalkingNew);
                 return true;
             }
@@ -78,18 +102,9 @@ public class TrackedImageModelManager : MonoBehaviour
     {
         if (trackedImageModel != null && Camera.main != null)
         {
-            var oldIsModelVisible = isModelVisible;
-            
             Plane[] frustumPlanes = GeometryUtility.CalculateFrustumPlanes(Camera.main);
             Bounds modelBounds = ComponentFinder.FindComponentInChildrenRecursive<Renderer>(trackedImageModel).bounds;
-
             isModelVisible = GeometryUtility.TestPlanesAABB(frustumPlanes, modelBounds);
-
-            if (oldIsModelVisible != isModelVisible)
-            {
-                var isModelVisibleStr = isModelVisible ? "true" : "false";
-                MyLogger.Log($"isModelVisible: {isModelVisibleStr}");
-            }
         }
     }
     
